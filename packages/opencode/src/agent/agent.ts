@@ -24,6 +24,7 @@ import { RuntimeFlags } from "@/effect/runtime-flags"
 import * as Option from "effect/Option"
 import * as OtelTracer from "@effect/opentelemetry/Tracer"
 import { type DeepMutable } from "@opencode-ai/core/schema"
+import { introspectionAISDKIntegration } from "../instrumentation"
 
 export const Info = Schema.Struct({
   name: Schema.String,
@@ -400,10 +401,13 @@ export const layer = Layer.effect(
 
         const params = {
           experimental_telemetry: {
-            isEnabled: cfg.experimental?.openTelemetry,
+            isEnabled: cfg.experimental?.openTelemetry || !!process.env.INTROSPECTION_TOKEN,
+            functionId: "agent.generate",
             tracer,
+            integrations: [introspectionAISDKIntegration()].filter((item) => item !== undefined),
             metadata: {
               userId: cfg.username ?? "unknown",
+              "gen_ai.conversation.id": `agent-generate:${input.description}`,
             },
           },
           temperature: 0.3,
