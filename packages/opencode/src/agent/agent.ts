@@ -5,6 +5,7 @@ import { generateObject, streamObject, type ModelMessage } from "ai"
 import { Truncate } from "@/tool/truncate"
 import { Auth } from "../auth"
 import { ProviderTransform } from "@/provider/transform"
+import { introspectionAISDKIntegrations } from "@/instrumentation"
 
 import PROMPT_GENERATE from "./generate.txt"
 import PROMPT_COMPACTION from "./prompt/compaction.txt"
@@ -400,11 +401,14 @@ export const layer = Layer.effect(
 
         const params = {
           experimental_telemetry: {
-            isEnabled: cfg.experimental?.openTelemetry,
+            isEnabled: cfg.experimental?.openTelemetry || !!process.env.INTROSPECTION_TOKEN,
+            functionId: "agent.generate",
             tracer,
             metadata: {
               userId: cfg.username ?? "unknown",
+              "gen_ai.conversation.id": "agent.generate",
             },
+            integrations: introspectionAISDKIntegrations(),
           },
           temperature: 0.3,
           messages: [

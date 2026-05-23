@@ -28,6 +28,7 @@ import * as Option from "effect/Option"
 import * as OtelTracer from "@effect/opentelemetry/Tracer"
 import { LLMAISDK } from "./llm/ai-sdk"
 import { LLMNativeRuntime } from "./llm/native-runtime"
+import { introspectionAISDKIntegrations } from "../instrumentation"
 
 const log = Log.create({ service: "llm" })
 export const OUTPUT_TOKEN_MAX = ProviderTransform.OUTPUT_TOKEN_MAX
@@ -456,13 +457,15 @@ const live: Layer.Layer<
             ],
           }),
           experimental_telemetry: {
-            isEnabled: cfg.experimental?.openTelemetry,
-            functionId: "session.llm",
+            isEnabled: cfg.experimental?.openTelemetry || !!process.env.INTROSPECTION_TOKEN,
+            functionId: input.agent.name,
             tracer: telemetryTracer,
             metadata: {
               userId: cfg.username ?? "unknown",
               sessionId: input.sessionID,
+              "gen_ai.conversation.id": input.sessionID,
             },
+            integrations: introspectionAISDKIntegrations(),
           },
         }),
       }
