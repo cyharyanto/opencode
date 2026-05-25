@@ -2,19 +2,27 @@ import { IntrospectionAISDKIntegration } from "@introspection-sdk/introspection-
 import type { IntrospectionAISDKIntegrationOptions } from "@introspection-sdk/introspection-node"
 
 class OpenCodeIntrospectionAISDKIntegration extends IntrospectionAISDKIntegration {
-  override onStart = (event: unknown): void => {
-    super.onStart(event)
-    this.setProviderName(event)
-  }
+  constructor(options: IntrospectionAISDKIntegrationOptions) {
+    super(options)
 
-  override onStepStart = (event: unknown): void => {
-    super.onStepStart(event)
-    this.setProviderName(event)
-  }
+    const baseOnStart = this.onStart
+    const baseOnStepStart = this.onStepStart
+    const baseOnStepFinish = this.onStepFinish
 
-  override onStepFinish = (event: unknown): void => {
-    this.setProviderName(event)
-    super.onStepFinish(event)
+    this.onStart = (event: unknown): void => {
+      baseOnStart(event)
+      this.setProviderName(event)
+    }
+
+    this.onStepStart = (event: unknown): void => {
+      baseOnStepStart(event)
+      this.setProviderName(event)
+    }
+
+    this.onStepFinish = (event: unknown): void => {
+      this.setProviderName(event)
+      baseOnStepFinish(event)
+    }
   }
 
   private setProviderName(event: unknown) {
