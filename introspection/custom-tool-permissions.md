@@ -1,7 +1,8 @@
 # Custom tool permission contract
 
 ## Summary
-n**Context:** opencode supports built-in tools, MCP tools, plugin tools, and config-directory tools.
+
+**Context:** opencode supports built-in tools, MCP tools, plugin tools, and config-directory tools.
 
 **Problem:** Plugin and config-directory tools receive an `ask` helper, but the host does not enforce a permission check before executing them. That means custom-tool rules that should ask or deny are only enforced when each tool voluntarily calls `ask` correctly.
 
