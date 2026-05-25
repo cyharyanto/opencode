@@ -38,6 +38,7 @@ import { errorMessage } from "./util/error"
 import { PluginCommand } from "./cli/cmd/plug"
 import { Heap } from "./cli/heap"
 import { drizzle } from "drizzle-orm/bun-sqlite"
+import { shutdownIntrospectionTelemetry } from "@/observability/introspection"
 import { ensureProcessMetadata } from "@opencode-ai/core/util/opencode-process"
 import { isRecord } from "@/util/record"
 
@@ -247,5 +248,10 @@ try {
   // Most notably, some docker-container-based MCP servers don't handle such signals unless
   // run using `docker run --init`.
   // Explicitly exit to avoid any hanging subprocesses.
+  try {
+    await shutdownIntrospectionTelemetry()
+  } catch (e) {
+    Log.Default.error("failed to shutdown introspection telemetry", { error: e })
+  }
   process.exit()
 }
