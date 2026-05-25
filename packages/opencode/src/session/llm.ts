@@ -351,6 +351,8 @@ const live: Layer.Layer<
       }
 
       if (flags.experimentalNativeLlm) {
+        // Introspection telemetry is attached to the default AI SDK streamText runtime below.
+        // The experimental native runtime bypasses that hook and needs separate manual/OTel spans.
         const native = LLMNativeRuntime.stream({
           model: input.model,
           provider: item,
