@@ -416,6 +416,7 @@
         "@effect/opentelemetry": "catalog:",
         "@effect/platform-node": "catalog:",
         "@gitlab/opencode-gitlab-auth": "1.3.3",
+        "@introspection-sdk/introspection-node": "0.4.2",
         "@lydell/node-pty": "catalog:",
         "@modelcontextprotocol/sdk": "1.27.1",
         "@octokit/graphql": "9.0.2",
@@ -1113,6 +1114,10 @@
     "@effect/platform-node": ["@effect/platform-node@4.0.0-beta.65", "", { "dependencies": { "@effect/platform-node-shared": "^4.0.0-beta.65", "mime": "^4.1.0", "undici": "^8.0.2" }, "peerDependencies": { "effect": "^4.0.0-beta.65", "ioredis": "^5.7.0" } }, "sha512-QQy3KRcMwP0TngQdfQGl2u1zp03B7k7DuF5SNS8aZhD0dDBpKZpCwFad1ODY5qdY3ycPgMwBwKRRK7y/aw0C9w=="],
 
     "@effect/platform-node-shared": ["@effect/platform-node-shared@4.0.0-beta.65", "", { "dependencies": { "@types/ws": "^8.18.1", "ws": "^8.20.0" }, "peerDependencies": { "effect": "^4.0.0-beta.65" } }, "sha512-3rY8F3WLEax6Hj08GI/OvDIH+KqjfxH7RM2bAMfgR75NgRmwDtny1P49PtPkoRjH5dcdtThThtsvE4X9OTZkpQ=="],
+
+    "@introspection-sdk/introspection-node": ["@introspection-sdk/introspection-node@0.4.2", "", { "dependencies": { "@introspection-sdk/types": "0.4.2", "@opentelemetry/api": "^1.9.1", "@opentelemetry/api-logs": "^0.217.0", "@opentelemetry/core": "^2.7.1", "@opentelemetry/exporter-logs-otlp-proto": "^0.217.0", "@opentelemetry/exporter-trace-otlp-proto": "^0.217.0", "@opentelemetry/resources": "^2.7.1", "@opentelemetry/sdk-logs": "^0.217.0", "@opentelemetry/sdk-trace-base": "^2.7.1", "@opentelemetry/semantic-conventions": "^1.41.1", "https-proxy-agent": "^7.0.6" } }, "sha512-Ukvol6VxnAf9osIqGVgfN0Tf/ZHpAjp0f41H+XrZ88rWHZ/Xcv1D+hIReyyZD1XxOmfUk/CCV0/wkmK++Zh/3g=="],
+
+    "@introspection-sdk/types": ["@introspection-sdk/types@0.4.2", "", {}, "sha512-ATbYjITw3kVPxAXrFlCCFSxcTj8cXsfqg5hpRN2SWQj0S0ZCRCleex4QbFSH7pcof64+kGyxzE5iEsEn9jWRAQ=="],
 
     "@electron/asar": ["@electron/asar@3.4.1", "", { "dependencies": { "commander": "^5.0.0", "glob": "^7.1.6", "minimatch": "^3.0.4" }, "bin": { "asar": "bin/asar.js" } }, "sha512-i4/rNPRS84t0vSRa2HorerGRXWyF4vThfHesw0dmcWHp+cspK743UanA0suA5Q5y8kzY2y6YKrvbIUn69BCAiA=="],
 
