@@ -459,7 +459,7 @@ const live: Layer.Layer<
           experimental_telemetry: {
             isEnabled: cfg.experimental?.openTelemetry || IntrospectionInstrumentation.isEnabled(),
             functionId: input.agent.name,
-            tracer: telemetryTracer,
+            tracer: cfg.experimental?.openTelemetry ? telemetryTracer : undefined,
             integrations: IntrospectionInstrumentation.integrations(),
             metadata: {
               userId: cfg.username ?? "unknown",
