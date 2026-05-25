@@ -456,18 +456,15 @@ const live: Layer.Layer<
               },
             ],
           }),
-          experimental_telemetry: {
-            isEnabled: cfg.experimental?.openTelemetry || IntrospectionInstrumentation.isEnabled(),
-            functionId: input.agent.name,
+          experimental_telemetry: IntrospectionInstrumentation.telemetry({
+            agentName: input.agent.name,
+            conversationID: input.sessionID,
             tracer: cfg.experimental?.openTelemetry ? telemetryTracer : undefined,
-            integrations: IntrospectionInstrumentation.integrations(),
             metadata: {
               userId: cfg.username ?? "unknown",
               sessionId: input.sessionID,
-              "gen_ai.conversation.id": input.sessionID,
-              "gen_ai.agent.name": input.agent.name,
             },
-          },
+          }),
         }),
       }
     })
@@ -491,6 +488,7 @@ const live: Layer.Layer<
             ).pipe(
               Stream.mapEffect((event) => LLMAISDK.toLLMEvents(state, event)),
               Stream.flatMap((events) => Stream.fromIterable(events)),
+              Stream.ensuring(Effect.promise(() => IntrospectionInstrumentation.forceFlush())),
             )
           }),
         ),
