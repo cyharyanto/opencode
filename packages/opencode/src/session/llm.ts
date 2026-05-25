@@ -28,6 +28,7 @@ import * as Option from "effect/Option"
 import * as OtelTracer from "@effect/opentelemetry/Tracer"
 import { LLMAISDK } from "./llm/ai-sdk"
 import { LLMNativeRuntime } from "./llm/native-runtime"
+import { telemetryConfig } from "@/observability/introspection"
 
 const log = Log.create({ service: "llm" })
 export const OUTPUT_TOKEN_MAX = ProviderTransform.OUTPUT_TOKEN_MAX
@@ -350,6 +351,8 @@ const live: Layer.Layer<
       }
 
       if (flags.experimentalNativeLlm) {
+        // The Introspection AI SDK integration below covers the default AI SDK runtime;
+        // the experimental native LLM runtime bypasses that telemetry hook.
         const native = LLMNativeRuntime.stream({
           model: input.model,
           provider: item,
@@ -455,15 +458,16 @@ const live: Layer.Layer<
               },
             ],
           }),
-          experimental_telemetry: {
-            isEnabled: cfg.experimental?.openTelemetry,
-            functionId: "session.llm",
+          experimental_telemetry: telemetryConfig({
+            enabled: cfg.experimental?.openTelemetry,
+            agentName: input.agent.name,
+            conversationId: input.sessionID,
             tracer: telemetryTracer,
             metadata: {
               userId: cfg.username ?? "unknown",
               sessionId: input.sessionID,
             },
-          },
+          }),
         }),
       }
     })
