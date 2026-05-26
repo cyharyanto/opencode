@@ -399,6 +399,9 @@ export const layer = Layer.effect(
         const isOpenaiOauth = model.providerID === "openai" && authInfo?.type === "oauth"
 
         const params = {
+          // Introspection AI SDK telemetry is intentionally not wired here yet: agent generation
+          // is a one-shot CLI/admin flow without a persisted SessionID or operation id to use as
+          // gen_ai.conversation.id. Add that durable identity before instrumenting this path.
           experimental_telemetry: {
             isEnabled: cfg.experimental?.openTelemetry,
             tracer,
