@@ -729,6 +729,7 @@ export const layer = Layer.effect(
         system: input.system,
         format: input.format,
       }
+      const session = yield* sessions.get(input.sessionID).pipe(Effect.orDie)
 
       if (current?.agent !== info.agent) {
         yield* events.publish(SessionEvent.AgentSwitched, {
@@ -879,10 +880,17 @@ export const layer = Layer.effect(
                     abort: controller.signal,
                     agent: input.agent!,
                     messageID: info.id,
-                    extra: { bypassCwdCheck: true, ...extra },
+                    extra,
                     messages: [],
                     metadata: () => Effect.void,
-                    ask: () => Effect.void,
+                    ask: (req) =>
+                      permission
+                        .ask({
+                          ...req,
+                          sessionID: input.sessionID,
+                          ruleset: Permission.merge(ag.permission, session.permission ?? []),
+                        })
+                        .pipe(Effect.orDie),
                   })
                   .pipe(Effect.onInterrupt(() => Effect.sync(() => controller.abort())))
               }
