@@ -28,7 +28,7 @@ import * as Option from "effect/Option"
 import * as OtelTracer from "@effect/opentelemetry/Tracer"
 import { LLMAISDK } from "./llm/ai-sdk"
 import { LLMNativeRuntime } from "./llm/native-runtime"
-import { introspectionIntegrations, isIntrospectionEnabled } from "@/introspection/instrumentation"
+import { isIntrospectionEnabled } from "@/introspection/instrumentation"
 
 const log = Log.create({ service: "llm" })
 export const OUTPUT_TOKEN_MAX = ProviderTransform.OUTPUT_TOKEN_MAX
@@ -467,7 +467,6 @@ const live: Layer.Layer<
               sessionId: input.sessionID,
               agentName: input.agent.name,
             },
-            integrations: introspectionIntegrations(),
           },
         }),
       }
