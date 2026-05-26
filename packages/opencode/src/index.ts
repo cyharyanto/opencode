@@ -40,8 +40,23 @@ import { Heap } from "./cli/heap"
 import { drizzle } from "drizzle-orm/bun-sqlite"
 import { ensureProcessMetadata } from "@opencode-ai/core/util/opencode-process"
 import { isRecord } from "@/util/record"
+import { registerIntrospectionAISDKTelemetry, shutdownIntrospectionTelemetry } from "@/introspection/instrumentation"
 
 const processMetadata = ensureProcessMetadata("main")
+registerIntrospectionAISDKTelemetry()
+
+async function exitAfterIntrospectionShutdown(code: number) {
+  await shutdownIntrospectionTelemetry().catch(() => {})
+  process.exit(code)
+}
+
+process.once("SIGINT", () => {
+  void exitAfterIntrospectionShutdown(130)
+})
+
+process.once("SIGTERM", () => {
+  void exitAfterIntrospectionShutdown(143)
+})
 
 process.on("unhandledRejection", (e) => {
   Log.Default.error("rejection", {
@@ -247,5 +262,6 @@ try {
   // Most notably, some docker-container-based MCP servers don't handle such signals unless
   // run using `docker run --init`.
   // Explicitly exit to avoid any hanging subprocesses.
+  await shutdownIntrospectionTelemetry().catch(() => {})
   process.exit()
 }

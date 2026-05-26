@@ -1,6 +1,5 @@
 import { IntrospectionAISDKIntegration } from "@introspection-sdk/introspection-node"
-
-type TelemetryIntegration = IntrospectionAISDKIntegration
+import { registerTelemetryIntegration, type TelemetryIntegration } from "ai"
 
 type StepEvent = {
   model?: {
@@ -10,32 +9,85 @@ type StepEvent = {
   stepNumber?: number
 }
 
-let integration: TelemetryIntegration | undefined
-let shutdownRegistered = false
+type IntrospectionIntegration = IntrospectionAISDKIntegration & TelemetryIntegration
 
-export function introspectionIntegration() {
-  if (!process.env.INTROSPECTION_TOKEN) return undefined
-  if (!integration) {
-    integration = withProviderNameShim(
+let integration: IntrospectionIntegration | undefined
+let registered = false
+let enabled = false
+
+export function registerIntrospectionAISDKTelemetry() {
+  if (registered) return enabled
+  registered = true
+
+  if (!process.env.INTROSPECTION_TOKEN) return false
+
+  integration = withConversationGate(
+    withProviderNameShim(
       new IntrospectionAISDKIntegration({
         serviceName: "opencode",
-      }),
-    )
-    registerShutdown(integration)
-  }
-  return integration
-}
-
-export function introspectionIntegrations() {
-  const current = introspectionIntegration()
-  return current ? [current] : []
+      }) as IntrospectionIntegration,
+    ),
+  )
+  registerTelemetryIntegration(integration)
+  enabled = true
+  return true
 }
 
 export function isIntrospectionEnabled() {
-  return introspectionIntegration() !== undefined
+  return enabled
 }
 
-function withProviderNameShim<T extends TelemetryIntegration>(delegate: T): T {
+export async function forceFlushIntrospectionTelemetry() {
+  await integration?.forceFlush()
+}
+
+export async function shutdownIntrospectionTelemetry() {
+  await integration?.shutdown()
+}
+
+function withConversationGate<T extends IntrospectionIntegration>(delegate: T): T {
+  const wrapped = delegate as T & Required<TelemetryIntegration>
+  const onStart = delegate.onStart?.bind(delegate)
+  const onStepStart = delegate.onStepStart?.bind(delegate)
+  const onToolCallStart = delegate.onToolCallStart?.bind(delegate)
+  const onToolCallFinish = delegate.onToolCallFinish?.bind(delegate)
+  const onStepFinish = delegate.onStepFinish?.bind(delegate)
+  const onFinish = delegate.onFinish?.bind(delegate)
+
+  wrapped.onStart = (event) => {
+    if (!hasConversationID(event)) return
+    onStart?.(event)
+  }
+  wrapped.onStepStart = (event) => {
+    if (!hasConversationID(event)) return
+    onStepStart?.(event)
+  }
+  wrapped.onToolCallStart = (event) => {
+    if (!hasConversationID(event)) return
+    onToolCallStart?.(event)
+  }
+  wrapped.onToolCallFinish = (event) => {
+    if (!hasConversationID(event)) return
+    onToolCallFinish?.(event)
+  }
+  wrapped.onStepFinish = (event) => {
+    if (!hasConversationID(event)) return
+    onStepFinish?.(event)
+  }
+  wrapped.onFinish = (event) => {
+    if (!hasConversationID(event)) return
+    onFinish?.(event)
+  }
+
+  return wrapped
+}
+
+function hasConversationID(event: unknown) {
+  const conversationID = (event as StepEvent | undefined)?.metadata?.["gen_ai.conversation.id"]
+  return typeof conversationID === "string" && conversationID.length > 0
+}
+
+function withProviderNameShim<T extends IntrospectionIntegration>(delegate: T): T {
   const wrapped = delegate as T & {
     _generation?: {
       rootSpan?: {
@@ -44,31 +96,31 @@ function withProviderNameShim<T extends TelemetryIntegration>(delegate: T): T {
       stepSpans?: Map<unknown, { setAttribute(name: string, value: string): void }>
     }
   }
-  const onStart = delegate.onStart.bind(delegate)
-  const onStepStart = delegate.onStepStart.bind(delegate)
-  const onStepFinish = delegate.onStepFinish.bind(delegate)
+  const onStart = delegate.onStart?.bind(delegate)
+  const onStepStart = delegate.onStepStart?.bind(delegate)
+  const onStepFinish = delegate.onStepFinish?.bind(delegate)
 
-  wrapped.onStart = (event: unknown) => {
-    onStart(event)
+  wrapped.onStart = (event) => {
+    onStart?.(event)
     const provider = providerName(event)
     if (provider) wrapped._generation?.rootSpan?.setAttribute("gen_ai.provider.name", provider)
   }
 
-  wrapped.onStepStart = (event: unknown) => {
-    onStepStart(event)
+  wrapped.onStepStart = (event) => {
+    onStepStart?.(event)
     setCurrentStepProvider(wrapped, event)
   }
 
-  wrapped.onStepFinish = (event: unknown) => {
+  wrapped.onStepFinish = (event) => {
     setCurrentStepProvider(wrapped, event)
-    onStepFinish(event)
+    onStepFinish?.(event)
   }
 
   return wrapped
 }
 
 function setCurrentStepProvider(
-  integration: TelemetryIntegration & {
+  integration: IntrospectionIntegration & {
     _generation?: {
       stepSpans?: Map<unknown, { setAttribute(name: string, value: string): void }>
     }
@@ -83,29 +135,6 @@ function setCurrentStepProvider(
 
 function providerName(event: unknown) {
   const e = event as StepEvent | undefined
-  const provider = e?.model?.provider ?? e?.metadata?.["gen_ai.provider.name"]
+  const provider = e?.model?.provider ?? e?.metadata?.["gen_ai.provider.name"] ?? e?.metadata?.["gen_ai.system"]
   return typeof provider === "string" && provider.length > 0 ? provider : undefined
-}
-
-function registerShutdown(current: TelemetryIntegration) {
-  if (shutdownRegistered) return
-  shutdownRegistered = true
-
-  const flush = () => {
-    void current.forceFlush().catch(() => {})
-  }
-  const shutdown = () => {
-    void current.shutdown().catch(() => {})
-  }
-
-  process.once("beforeExit", flush)
-  process.once("exit", flush)
-  process.once("SIGINT", () => {
-    shutdown()
-    process.exit(130)
-  })
-  process.once("SIGTERM", () => {
-    shutdown()
-    process.exit(143)
-  })
 }
